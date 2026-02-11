@@ -1,0 +1,116 @@
+﻿@model List<LearningApp.Models.Enrollment>
+
+<h2>Enrollment</h2>
+
+<!-- Combined Search + Dropdown Form -->
+<form id="filterForm" style="margin-bottom:20px;">
+    <input type="text"
+           name="search"
+           placeholder="Search by course name"
+           value="@ViewBag.Search"
+           style="padding:6px;" />
+
+    <select name="courseId" style="padding:6px;">
+        <option value="">All Courses</option>
+
+        @foreach (var id in ViewBag.CourseIds as List<int> ?? new List<int>())
+        {
+            <option value="@id"
+                selected="@(ViewBag.CourseId != null && (int)ViewBag.CourseId == id)">
+                @id
+            </option>
+        }
+    </select>
+
+    <button type="submit" style="padding:6px 10px;">
+        Filter
+    </button>
+</form>
+
+
+<!-- Table Container -->
+<div id="tableContainer">
+    <table border="1" cellpadding="8" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Requirement Id</th>
+                <th>Course Id</th>
+                <th>Course Name</th>
+                <th>View Page</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Count > 0)
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.RequirementId</td>
+                        <td>@item.CourseId</td>
+                        <td>@item.CourseName</td>
+                        <td>
+                            <a href="/Learning/Course/@item.CourseId">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" style="text-align:center;">
+                        No data found
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+<!-- AJAX Script (No Refresh) -->
+<script>
+    document.getElementById("filterForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const queryString = new URLSearchParams(formData).toString();
+
+        fetch(`http://localhost:5211/api/course?${queryString}`)
+            .then(response => response.json())   // ✅ get JSON
+            .then(data => {
+
+                let rows = "";
+
+                if (data.length > 0) {
+                    data.forEach(item => {
+                        rows += `
+                            <tr>
+                                <td>${item.requirementId}</td>
+                                <td>${item.courseId}</td>
+                                <td>${item.courseName}</td>
+                                <td>
+                                    <a href="/Learning/Course/${item.courseId}">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    rows = `
+                        <tr>
+                            <td colspan="4" style="text-align:center;">
+                                No data found
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                document.querySelector("#tableContainer tbody").innerHTML = rows;
+            })
+            .catch(error => console.error("Error:", error));
+    });
+</script>
+
