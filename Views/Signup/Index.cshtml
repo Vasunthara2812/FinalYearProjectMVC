@@ -1,20 +1,129 @@
 @{
     Layout = null;
-}
-@{
-    ViewData["Title"] = "Signup";
+    ViewData["Title"] = "Signup - Learning Portal";
 }
 
-<h2>Signup</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Left Side - Branding -->
+        <div class="auth-left">
+            <div class="branding">
+                <div class="logo">
+                    <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25 5L45 15V35L25 45L5 35V15L25 5Z" fill="url(#gradient)" stroke="white" stroke-width="2"/>
+                        <path d="M25 15L35 20V30L25 35L15 30V20L25 15Z" fill="white" opacity="0.9"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="5" y1="5" x2="45" y2="45">
+                                <stop offset="0%" style="stop-color:#667eea"/>
+                                <stop offset="100%" style="stop-color:#764ba2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h1>Learning Portal</h1>
+                <p class="tagline">Empower your learning journey</p>
+            </div>
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Start Learning Today</h3>
+                    <p>Join thousands of learners advancing their skills</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">💡</div>
+                    <h3>Personalized Experience</h3>
+                    <p>Get course recommendations tailored to your goals</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Earn Certificates</h3>
+                    <p>Showcase your achievements with verified credentials</p>
+                </div>
+            </div>
+        </div>
 
-<form method="post" action="/Signup/Signup">
-    <input type="text" name="username" placeholder="Username" />
-    <br /><br />
+        <!-- Right Side - Signup Form -->
+        <div class="auth-right">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h2>Create Account</h2>
+                    <p>Start your learning journey with us today</p>
+                </div>
 
-    <input type="password" name="password" placeholder="Password" />
-    <br /><br />
+                <form method="post" action="/Signup/Signup" class="auth-form">
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.Error))
+                    {
+                        <div class="alert alert-error">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>@ViewBag.Error</span>
+                        </div>
+                    }
 
-    <button type="submit">Signup</button>
-</form>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                            </svg>
+                            <input type="text" 
+                                   name="username" 
+                                   id="username" 
+                                   placeholder="Choose a username"
+                                   required 
+                                   autocomplete="username" />
+                        </div>
+                    </div>
 
-<p style="color:red">@ViewBag.Error</p>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                            </svg>
+                            <input type="password" 
+                                   name="password" 
+                                   id="password" 
+                                   placeholder="Create a strong password"
+                                   required 
+                                   autocomplete="new-password" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <span>Create Account</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+
+                    <div class="alternate-link">
+                        Already have an account? 
+                        <a asp-controller="Login" asp-action="Index">Sign in</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="auth-footer">
+                <p>&copy; 2024 Learning Portal. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <span>•</span>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

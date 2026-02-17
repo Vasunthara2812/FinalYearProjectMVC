@@ -1,0 +1,29 @@
+
+<h2>All Training Requirements</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Role</th>
+            <th>Domain</th>
+            <th>Interest</th>
+            <th>Skill Level</th>
+            <th>Goal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Role</td>
+                <td>@item.Domain</td>
+                <td>@item.Interest</td>
+                <td>@item.SkillLevel</td>
+                <td>@item.Goal</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<br />
+<a asp-action="Index">Add New Requirement</a>

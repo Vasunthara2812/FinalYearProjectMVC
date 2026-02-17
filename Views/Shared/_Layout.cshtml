@@ -3,54 +3,97 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - LearningApp</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Learning Portal</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/LearningApp.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LearningApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <svg width="30" height="30" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25 5L45 15V35L25 45L5 35V15L25 5Z" fill="url(#gradient)" stroke="currentColor" stroke-width="2"/>
+                        <path d="M25 15L35 20V30L25 35L15 30V20L25 15Z" fill="currentColor" opacity="0.9"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="5" y1="5" x2="45" y2="45">
+                                <stop offset="0%" style="stop-color:#667eea"/>
+                                <stop offset="100%" style="stop-color:#764ba2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    Learning Portal
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Learning" asp-action="Index">Learning</a>
+                            <a class="nav-link" asp-area="" asp-controller="Learning" asp-action="Index">Learning</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Practice" asp-action="Index">Practice</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Progress" asp-action="Index">Progress</a>
+                            <a class="nav-link" asp-area="" asp-controller="Practice" asp-action="Index">Practice</a>
                         </li>
                         
                     </ul>
+                    
+                    <!-- User Profile & Logout Section -->
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                @if (!string.IsNullOrEmpty(Context.Session.GetString("User")))
+                                {
+                                    @Context.Session.GetString("User").Substring(0, 1).ToUpper()
+                                }
+                                else
+                                {
+                                    <text>U</text>
+                                }
+                            </div>
+                            <div class="user-details">
+                                <span class="username">
+                                    @if (!string.IsNullOrEmpty(Context.Session.GetString("User")))
+                                    {
+                                        @Context.Session.GetString("User")
+                                    }
+                                    else
+                                    {
+                                        <text>Guest</text>
+                                    }
+                                </span>
+                                <span class="user-role">Learner</span>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("Logout","Login")" class="logout-btn">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+                            </svg>
+                            Logout
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
-        <p><a href="@Url.Action("Logout","Login")">Logout</a></p>
-        
     </header>
+    
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer>
         <div class="container">
-            &copy; 2026 - LearningApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <p>&copy; 2024 Learning Portal - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></p>
         </div>
     </footer>
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

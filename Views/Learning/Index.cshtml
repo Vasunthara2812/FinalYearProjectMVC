@@ -1,21 +1,88 @@
-<h2>Training Requirements</h2>
-
-<form method="post">
-    
-    <label>Role</label><br />
-    <input type="text" name="role" /><br /><br />
-    <label>Domain</label><br />
-    <input type="text" name="domain" /><br /><br />
-    <label>Interest</label><br />
-    <input type="text" name="interest" /><br /><br />
-    <label>Skill Level</label><br />
-    <input type="text" name="skillLevel" /><br /><br />
-    <label>Goal</label><br />
-    <input type="text" name="goal" /><br /><br />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Requirements - Learning App</title>
+    <link rel="stylesheet" href="~/css/training.css" />
+</head>
+<body>
     
 
-    <button type="submit">Submit</button>
-</form>
+    <div class="main-content">
+        <div class="form-container">
+            <h2>Training Requirements</h2>
 
-<p style="color:red">@ViewBag.Error</p>
-<p style="color:green">@ViewBag.Success</p>
+            <form method="post">
+                <label for="role">Role</label>
+                <input type="text" id="role" name="role" placeholder="Enter your role" required />
+
+                <label for="domain">Domain</label>
+                <input type="text" id="domain" name="domain" placeholder="Enter your domain" required />
+
+                <label for="interest">Interest</label>
+                <input type="text" id="interest" name="interest" placeholder="Enter your interests" required />
+
+                <label for="skillLevel">Skill Level</label>
+                <input type="text" id="skillLevel" name="skillLevel" placeholder="E.g., Beginner, Intermediate, Advanced" required />
+
+                <label for="goal">Goal</label>
+                <input type="text" id="goal" name="goal" placeholder="What do you want to achieve?" required />
+
+                <button type="submit">Submit</button>
+
+                @if (ViewBag.Error != null)
+                {
+                    <p class="message error-message">@ViewBag.Error</p>
+                }
+
+                @if (ViewBag.Success != null)
+                {
+                    <p class="message success-message">@ViewBag.Success</p>
+                }
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Logout Handler
+        function handleLogout(event) {
+            event.preventDefault();
+            
+            // Clear session/authentication
+            fetch('/Account/Logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                // Clear local storage if you're storing anything
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Redirect to sign in page
+                window.location.href = '/Account/SignIn';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                // Even if there's an error, redirect to sign in
+                window.location.href = '/Account/SignIn';
+            });
+        }
+
+        // Form validation feedback
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Submitting...';
+            
+            // Re-enable after a timeout in case of error
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = 'Submit';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

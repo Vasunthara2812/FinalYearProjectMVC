@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Gemini Demo";
+}
+
+<h2>Gemini MVC Demo</h2>
+
+<form asp-controller="Gemini" asp-action="AskGemini" method="post">
+    <div>
+        <label>Enter Prompt:</label><br />
+        <input type="text" name="prompt" style="width:400px;" required />
+    </div>
+    <br />
+    <button type="submit">Ask Gemini</button>
+</form>
+
+@if (ViewBag.Response != null)
+{
+    <hr />
+    <h3>Response:</h3>
+    <p>@ViewBag.Response</p>
+}

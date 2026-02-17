@@ -1,0 +1,180 @@
+@model List<LearningApp.Models.Subtopics>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Subtopics";
+}
+
+<link rel="stylesheet" href="~/css/subtopics.css" />
+
+<div class="main-content">
+    <!-- Optional: Back Button -->
+    <!-- <a href="javascript:history.back()" class="back-button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Back to Chapters
+    </a> -->
+
+    <h2>Subtopics</h2>
+
+    <!-- Search Form -->
+    <form id="searchForm" style="margin-bottom:20px;">
+        <input type="text"
+               id="searchInput"
+               name="search"
+               placeholder="Search by subtopic name"
+               style="padding:10px; border-radius:5px; border:2px solid #e0e0e0; margin-right:10px; flex:1; min-width:300px;" />
+
+        <button type="submit" style="padding:10px 20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:5px; font-weight:600; cursor:pointer;">
+            Search
+        </button>
+    </form>
+
+    <!-- Search Result Message -->
+    <div id="searchMessage" style="margin-bottom:15px; padding:10px; border-radius:5px; display:none;"></div>
+
+    <!-- Table Container -->
+    <div id="tableContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th>Subtopic Id</th>
+                    <th>Chapter Id</th>
+                    <th>Course Id</th>
+                    <th>Subtopic Name</th>
+                    <th>View Page</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                @if (Model != null && Model.Count > 0)
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr data-subtopic-id="@item.subtopicId" data-subtopic-name="@item.subtopicName.ToLower()">
+                            <td>@item.subtopicId</td>
+                            <td>@item.chapterId</td>
+                            <td>@item.courseId</td>
+                            <td>@item.subtopicName</td>
+                            <td>
+                                <a href="/Result/Index/@item.courseId">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📑</div>
+                                <div class="empty-state-text">No subtopics found</div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Add active class to current page in navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.textContent.trim() === 'Learning') {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Search functionality
+        document.getElementById("searchForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const searchValue = document.getElementById("searchInput").value.toLowerCase().trim();
+            const searchMessage = document.getElementById("searchMessage");
+
+            // Clear previous message
+            searchMessage.style.display = "none";
+            searchMessage.textContent = "";
+
+            if (!searchValue) {
+                searchMessage.style.display = "block";
+                searchMessage.style.background = "#fff3cd";
+                searchMessage.style.color = "#856404";
+                searchMessage.style.border = "1px solid #ffeaa7";
+                searchMessage.textContent = "⚠️ Please enter a subtopic name to search";
+                return;
+            }
+
+            // Get all rows
+            const allRows = document.querySelectorAll("#tableBody tr");
+            let matchCount = 0;
+
+            allRows.forEach(row => {
+                const subtopicName = row.getAttribute("data-subtopic-name");
+                
+                // Skip if this is the "no data" or "empty state" row
+                if (!subtopicName) {
+                    row.style.display = "none";
+                    return;
+                }
+
+                // Check for exact or partial match
+                if (subtopicName.includes(searchValue)) {
+                    matchCount++;
+                    row.style.display = "";
+                    row.style.background = "#e8f4f8";
+                } else {
+                    row.style.display = "none";
+                    row.style.background = "";
+                }
+            });
+
+            // Handle search results
+            if (matchCount === 0) {
+                searchMessage.style.display = "block";
+                searchMessage.style.background = "#f8d7da";
+                searchMessage.style.color = "#721c24";
+                searchMessage.style.border = "1px solid #f5c6cb";
+                searchMessage.textContent = "❌ No subtopic found with that name";
+            } else if (matchCount === 1) {
+                searchMessage.style.display = "block";
+                searchMessage.style.background = "#d4edda";
+                searchMessage.style.color = "#155724";
+                searchMessage.style.border = "1px solid #c3e6cb";
+                searchMessage.textContent = "✓ Found 1 subtopic matching your search";
+            } else {
+                searchMessage.style.display = "block";
+                searchMessage.style.background = "#d1ecf1";
+                searchMessage.style.color = "#0c5460";
+                searchMessage.style.border = "1px solid #bee5eb";
+                searchMessage.textContent = `ℹ️ Found ${matchCount} subtopics matching your search`;
+            }
+        });
+
+        // Clear search highlighting when input is cleared
+        document.getElementById("searchInput").addEventListener("input", function() {
+            if (this.value.trim() === "") {
+                const allRows = document.querySelectorAll("#tableBody tr");
+                allRows.forEach(row => {
+                    row.style.display = "";
+                    row.style.background = "";
+                });
+                document.getElementById("searchMessage").style.display = "none";
+            }
+        });
+
+        // Optional: Add loading state when clicking view links
+        document.querySelectorAll('tbody td a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.getElementById('tableContainer').classList.add('loading');
+            });
+        });
+    </script>
+}

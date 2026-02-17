@@ -1,2 +1,293 @@
-<h2>Practice Page</h2>
-<p>Practice your skills here. More content coming soon!</p>
+@{
+    ViewData["Title"] = "Practice";
+}
+
+<link rel="stylesheet" href="~/css/practice.css" />
+
+<div class="practice-container">
+    <div class="practice-card">
+        <div class="practice-header">
+            <h2>Practice Quiz</h2>
+            <p>Test your knowledge and improve your skills!</p>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar">0%</div>
+            </div>
+        </div>
+
+        <div id="questionsContainer" class="questions-wrapper"></div>
+
+        <div class="results-section" id="results">
+            <div class="results-icon">🎉</div>
+            <h3>Quiz Complete!</h3>
+            <div class="score-display" id="finalScore">0%</div>
+            <div class="score-breakdown">
+                <div class="score-item">
+                    <div class="score-label">Correct Answers</div>
+                    <div class="score-value" id="correctCount">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Total Questions</div>
+                    <div class="score-value" id="totalCount">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Points Earned</div>
+                    <div class="score-value" id="pointsEarned">0</div>
+                </div>
+            </div>
+            <button class="btn-retry" onclick="resetQuiz()">Try Again</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const questions = [
+            {
+                question: "What does HTML stand for?",
+                options: [
+                    "Hyper Text Markup Language",
+                    "High Tech Modern Language",
+                    "Home Tool Markup Language",
+                    "Hyperlinks and Text Markup Language"
+                ],
+                correct: 0,
+                points: 10
+            },
+            {
+                question: "Which CSS property is used to change the text color?",
+                options: [
+                    "text-color",
+                    "font-color",
+                    "color",
+                    "text-style"
+                ],
+                correct: 2,
+                points: 10
+            },
+            {
+                question: "What is the correct syntax for referring to an external JavaScript file?",
+                options: [
+                    "<script href='app.js'>",
+                    "<script name='app.js'>",
+                    "<script src='app.js'>",
+                    "<js src='app.js'>"
+                ],
+                correct: 2,
+                points: 10
+            },
+            {
+                question: "Which HTML tag is used to define an internal style sheet?",
+                options: [
+                    "<css>",
+                    "<style>",
+                    "<script>",
+                    "<styles>"
+                ],
+                correct: 1,
+                points: 10
+            },
+            {
+                question: "In JavaScript, which operator is used to assign a value to a variable?",
+                options: [
+                    "*",
+                    "-",
+                    "=",
+                    "x"
+                ],
+                correct: 2,
+                points: 10
+            },
+            {
+                question: "What does CSS stand for?",
+                options: [
+                    "Creative Style Sheets",
+                    "Cascading Style Sheets",
+                    "Computer Style Sheets",
+                    "Colorful Style Sheets"
+                ],
+                correct: 1,
+                points: 10
+            },
+            {
+                question: "Which HTML attribute specifies an alternate text for an image?",
+                options: [
+                    "title",
+                    "src",
+                    "alt",
+                    "longdesc"
+                ],
+                correct: 2,
+                points: 10
+            },
+            {
+                question: "How do you create a function in JavaScript?",
+                options: [
+                    "function myFunction()",
+                    "function:myFunction()",
+                    "function = myFunction()",
+                    "create myFunction()"
+                ],
+                correct: 0,
+                points: 10
+            },
+            {
+                question: "Which property is used in CSS to change the background color?",
+                options: [
+                    "bgcolor",
+                    "background-color",
+                    "color-background",
+                    "bg-color"
+                ],
+                correct: 1,
+                points: 10
+            },
+            {
+                question: "What is the correct HTML for creating a hyperlink?",
+                options: [
+                    "<a url='http://example.com'>Example</a>",
+                    "<a href='http://example.com'>Example</a>",
+                    "<link>http://example.com</link>",
+                    "<a>http://example.com</a>"
+                ],
+                correct: 1,
+                points: 10
+            }
+        ];
+
+        let userAnswers = new Array(questions.length).fill(null);
+        let totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.id = `question-${index}`;
+
+                card.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">Question ${index + 1}</span>
+                        <span class="question-points">${q.points} points</span>
+                    </div>
+                    <div class="question-text">${q.question}</div>
+                    <div class="options">
+                        ${q.options.map((option, optIndex) => `
+                            <label class="option" id="option-${index}-${optIndex}">
+                                <input type="radio" name="question-${index}" value="${optIndex}" 
+                                    onchange="handleAnswer(${index}, ${optIndex})">
+                                <span>${option}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${index}"></div>
+                    <button class="btn-submit" id="submit-${index}" 
+                        onclick="submitAnswer(${index})" disabled>
+                        Submit Answer
+                    </button>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function handleAnswer(questionIndex, optionIndex) {
+            userAnswers[questionIndex] = optionIndex;
+            document.getElementById(`submit-${questionIndex}`).disabled = false;
+        }
+
+        function submitAnswer(questionIndex) {
+            const question = questions[questionIndex];
+            const userAnswer = userAnswers[questionIndex];
+            const isCorrect = userAnswer === question.correct;
+
+            const options = document.querySelectorAll(`input[name="question-${questionIndex}"]`);
+            options.forEach(option => option.disabled = true);
+
+            const selectedOption = document.getElementById(`option-${questionIndex}-${userAnswer}`);
+            const correctOption = document.getElementById(`option-${questionIndex}-${question.correct}`);
+
+            if (isCorrect) {
+                selectedOption.classList.add('correct');
+            } else {
+                selectedOption.classList.add('incorrect');
+                correctOption.classList.add('correct');
+            }
+
+            document.querySelectorAll(`#question-${questionIndex} .option`).forEach(opt => {
+                opt.classList.add('disabled');
+            });
+
+            const feedback = document.getElementById(`feedback-${questionIndex}`);
+            feedback.style.display = 'block';
+            if (isCorrect) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `✓ Correct! You earned ${question.points} points.`;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `✗ Incorrect. The correct answer is: <strong>${question.options[question.correct]}</strong>`;
+            }
+
+            document.getElementById(`submit-${questionIndex}`).disabled = true;
+
+            updateProgress();
+            checkCompletion();
+        }
+
+        function updateProgress() {
+            const answered = userAnswers.filter(a => a !== null).length;
+            const percentage = (answered / questions.length) * 100;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = Math.round(percentage) + '%';
+        }
+
+        function checkCompletion() {
+            const allAnswered = userAnswers.every(a => a !== null);
+            const allSubmitted = questions.every((_, index) => {
+                return document.getElementById(`submit-${index}`).disabled;
+            });
+
+            if (allAnswered && allSubmitted) {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            let correctAnswers = 0;
+            let pointsEarned = 0;
+
+            questions.forEach((q, index) => {
+                if (userAnswers[index] === q.correct) {
+                    correctAnswers++;
+                    pointsEarned += q.points;
+                }
+            });
+
+            const percentage = Math.round((pointsEarned / totalPoints) * 100);
+
+            document.getElementById('finalScore').textContent = percentage + '%';
+            document.getElementById('correctCount').textContent = correctAnswers;
+            document.getElementById('totalCount').textContent = questions.length;
+            document.getElementById('pointsEarned').textContent = pointsEarned + '/' + totalPoints;
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetQuiz() {
+            userAnswers = new Array(questions.length).fill(null);
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
+            renderQuestions();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        renderQuestions();
+    </script>
+}

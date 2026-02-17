@@ -1,116 +1,177 @@
 ﻿@model List<LearningApp.Models.Enrollment>
 
-<h2>Enrollment</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment - Learning App</title>
+    <link rel="stylesheet" href="~/css/enrollment.css" />
+</head>
+<body>
+    
+    
 
-<!-- Combined Search + Dropdown Form -->
-<form id="filterForm" style="margin-bottom:20px;">
-    <input type="text"
-           name="search"
-           placeholder="Search by course name"
-           value="@ViewBag.Search"
-           style="padding:6px;" />
+    <div class="main-content">
+        <h2>Enrollment</h2>
 
-    <select name="courseId" style="padding:6px;">
-        <option value="">All Courses</option>
+        <!-- Combined Search + Dropdown Form -->
+        <form id="filterForm">
+        <input type="text"
+               id="searchInput"
+               name="search"
+               placeholder="Search by course name"
+               value="@ViewBag.Search" />
 
-        @foreach (var id in ViewBag.CourseIds as List<int> ?? new List<int>())
-        {
-            <option value="@id"
-                selected="@(ViewBag.CourseId != null && (int)ViewBag.CourseId == id)">
-                @id
-            </option>
-        }
-    </select>
+        <select id="courseIdSelect" name="courseId">
+            <option value="">All Courses</option>
 
-    <button type="submit" style="padding:6px 10px;">
-        Filter
-    </button>
-</form>
-
-
-<!-- Table Container -->
-<div id="tableContainer">
-    <table border="1" cellpadding="8" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-                <th>Requirement Id</th>
-                <th>Course Id</th>
-                <th>Course Name</th>
-                <th>View Page</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model != null && Model.Count > 0)
+            @foreach (var id in ViewBag.CourseIds as List<int> ?? new List<int>())
             {
-                foreach (var item in Model)
+                <option value="@id"
+                    selected="@(ViewBag.CourseId != null && (int)ViewBag.CourseId == id)">
+                    @id
+                </option>
+            }
+        </select>
+
+        <button type="submit">
+            Filter
+        </button>
+    </form>
+
+    <!-- Table Container -->
+    <div id="tableContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th>Requirement Id</th>
+                    <th>Course Id</th>
+                    <th>Course Name</th>
+                    <th>View Page</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                @if (Model != null && Model.Count > 0)
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.RequirementId</td>
+                            <td>@item.CourseId</td>
+                            <td>@item.CourseName</td>
+                            <td>
+                                <a href="/chapter/index/@item.CourseId">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>@item.RequirementId</td>
-                        <td>@item.CourseId</td>
-                        <td>@item.CourseName</td>
-                        <td>
-                            <a href="/Learning/Course/@item.CourseId">
-                                View
-                            </a>
+                        <td colspan="4">
+                            No data found
                         </td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="4" style="text-align:center;">
-                        No data found
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 
+    <!-- AJAX Script (No Refresh) -->
+    <script>
+        document.getElementById("filterForm").addEventListener("submit", function (e) {
+            e.preventDefault();
 
-<!-- AJAX Script (No Refresh) -->
-<script>
-    document.getElementById("filterForm").addEventListener("submit", function (e) {
-        e.preventDefault();
+            const searchValue = document.getElementById("searchInput").value.toLowerCase().trim();
+            const courseIdValue = document.getElementById("courseIdSelect").value.trim();
 
-        const formData = new FormData(this);
-        const queryString = new URLSearchParams(formData).toString();
+            // Get all rows
+            const allRows = document.querySelectorAll("#tableBody tr");
+            let visibleCount = 0;
 
-        fetch(`http://localhost:5211/api/course?${queryString}`)
-            .then(response => response.json())   // ✅ get JSON
-            .then(data => {
-
-                let rows = "";
-
-                if (data.length > 0) {
-                    data.forEach(item => {
-                        rows += `
-                            <tr>
-                                <td>${item.requirementId}</td>
-                                <td>${item.courseId}</td>
-                                <td>${item.courseName}</td>
-                                <td>
-                                    <a href="/Learning/Course/${item.courseId}">
-                                        View
-                                    </a>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    rows = `
-                        <tr>
-                            <td colspan="4" style="text-align:center;">
-                                No data found
-                            </td>
-                        </tr>
-                    `;
+            allRows.forEach(row => {
+                // Get cell values directly from the table cells
+                const cells = row.querySelectorAll("td");
+                
+                // Skip if this is the "no data" row
+                if (cells.length === 1 || row.textContent.includes("No data found")) {
+                    row.style.display = "none";
+                    return;
                 }
 
-                document.querySelector("#tableContainer tbody").innerHTML = rows;
-            })
-            .catch(error => console.error("Error:", error));
-    });
-</script>
+                const courseId = cells[1] ? cells[1].textContent.trim() : "";
+                const courseName = cells[2] ? cells[2].textContent.toLowerCase().trim() : "";
 
+                let matches = true;
+
+                // Filter by search term (course name)
+                if (searchValue && !courseName.includes(searchValue)) {
+                    matches = false;
+                }
+
+                // Filter by course ID
+                if (courseIdValue && courseId !== courseIdValue) {
+                    matches = false;
+                }
+
+                // Show or hide row
+                if (matches) {
+                    row.style.display = "";
+                    visibleCount++;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            // If no rows are visible, show "no data" message
+            if (visibleCount === 0) {
+                const tableBody = document.getElementById("tableBody");
+                const existingNoData = tableBody.querySelector(".no-data-row");
+                
+                if (!existingNoData) {
+                    const noDataRow = document.createElement("tr");
+                    noDataRow.className = "no-data-row";
+                    noDataRow.innerHTML = `<td colspan="4">No data found</td>`;
+                    tableBody.appendChild(noDataRow);
+                }
+            } else {
+                // Remove "no data" message if it exists
+                const noDataRow = document.querySelector(".no-data-row");
+                if (noDataRow) {
+                    noDataRow.remove();
+                }
+            }
+        });
+
+        // Logout Handler
+        function handleLogout(event) {
+            event.preventDefault();
+            
+            // Clear session/authentication
+            fetch('/Account/Logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                // Clear local storage if you're storing anything
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Redirect to login page
+                window.location.href = '/Account/Login';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                // Even if there's an error, redirect to login
+                window.location.href = '/Account/Login';
+            });
+        }
+    </script>
+    </div>
+</body>
+</html>
