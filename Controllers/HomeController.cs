@@ -7,6 +7,7 @@ namespace LearningApp.Controllers
     public class HomeController : Controller
     {
         private const string ApiUrl = "http://localhost:5211/api/course";
+        private const string RequirementApiUrl = "http://localhost:5211/api/requirement";
 
         public async Task<IActionResult> Index(int? courseId, string search)
         {
@@ -16,12 +17,37 @@ namespace LearningApp.Controllers
                 return RedirectToAction("Index", "Login");
             }
             using var client = new HttpClient();
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
 
+            // Fetch Generated Courses from Requirements API
+            try
+            {
+                var requirementResponse = await client.GetAsync($"{RequirementApiUrl}/user/{userId}");
+                if (requirementResponse.IsSuccessStatusCode)
+                {
+                    var json = await requirementResponse.Content.ReadAsStringAsync();
+                    var requirements = JsonSerializer.Deserialize<List<TrainingRequirement>>(json,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    // Filter only those with generated courses
+                    var generatedCourses = requirements?
+                        .Where(r => !string.IsNullOrEmpty(r.CourseName))
+                        .ToList() ?? new List<TrainingRequirement>();
+                    
+                    ViewBag.GeneratedCourses = generatedCourses;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching generated courses: {ex.Message}");
+                ViewBag.GeneratedCourses = new List<TrainingRequirement>();
+            }
+
+            // Fetch Enrollments
             var apiUrl = ApiUrl;
 
             // Build query string properly
             var queryParams = new List<string>();
-            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
             if(userId > 0)
                 queryParams.Add($"userId={userId}");
             if (!string.IsNullOrWhiteSpace(search))

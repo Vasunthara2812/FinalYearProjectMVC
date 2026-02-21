@@ -13,9 +13,28 @@
     
 
     <div class="main-content">
-        <h2>Enrollment</h2>
+        <h2>🎓 Personalized Learning Courses</h2>
 
-        <!-- Combined Search + Dropdown Form -->
+        <!-- Generated Courses Section -->
+        @if (ViewBag.GeneratedCourses != null && ((System.Collections.IList)ViewBag.GeneratedCourses).Count > 0)
+        {
+            <div style="background-color: #f0f8ff; padding: 20px; margin-bottom: 30px; border-radius: 8px; border-left: 4px solid #28a745;">
+                <h3 style="color: #28a745; margin-top: 0;">✨ Your Generated Courses</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    @foreach (var course in ViewBag.GeneratedCourses)
+                    {
+                        <div style="background-color: white; padding: 15px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0 0 10px 0; color: #333;">🎯 @course.CourseName</h4>
+                            <p style="margin: 0; color: #666; font-size: 12px;">Role: <strong>@course.Role</strong></p>
+                            <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">Domain: <strong>@course.Domain</strong></p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Enrollment Search + Dropdown Form -->
+        <h3>📋 Enrollment Courses</h3>
         <form id="filterForm">
         <input type="text"
                id="searchInput"
@@ -61,7 +80,7 @@
                             <td>@item.CourseId</td>
                             <td>@item.CourseName</td>
                             <td>
-                                <a href="/chapter/index/@item.CourseId">
+                                <a href="/content/index/@item.CourseId">
                                     View
                                 </a>
                             </td>

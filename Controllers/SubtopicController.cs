@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using LearningApp.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +12,7 @@ namespace LearningApp.Controllers
 {
     public class SubtopicController : Controller
     {
-        private const string ApiUrl = "http://localhost:5211/api/subtopic";
+        private const string BaseApiUrl = "http://localhost:5211/api/subtopic";
         private readonly ILogger<SubtopicController> _logger;
 
         public SubtopicController(ILogger<SubtopicController> logger)
@@ -18,51 +20,59 @@ namespace LearningApp.Controllers
             _logger = logger;
         }
 
+        // id = chapterId
         public async Task<IActionResult> Index(int id)
         {
-            // Session check
+            // ✅ Session check
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("User")))
             {
                 return RedirectToAction("Index", "Login");
             }
 
-            using var client = new HttpClient();
-
-            // ✅ Correct API URL formation (Route Parameter)
-            var apiUrl = ApiUrl;
-
-            if (id > 0)
+            if (id <= 0)
             {
-                apiUrl = $"{ApiUrl}/{id}";
+                _logger.LogWarning("Invalid chapterId received: {ChapterId}", id);
+                return View(new List<Subtopics>());
             }
 
-            Console.WriteLine($"API URL: {apiUrl}");
+            var subtopics = new List<Subtopics>();
 
-            var response = await client.GetAsync(apiUrl);
-
-            Console.WriteLine($"API Response Status: {response.StatusCode}");
-
-            var list = new List<Subtopics>();
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var json = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Response JSON: {json}");
+                using var client = new HttpClient();
 
-                list = JsonSerializer.Deserialize<List<Subtopics>>(json,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new List<Subtopics>();
+                // ✅ Correct API route
+                var apiUrl = $"{BaseApiUrl}/chapter/{id}";
 
-                Console.WriteLine($"Deserialized List Count: {list.Count}");
+                _logger.LogInformation("Calling API: {ApiUrl}", apiUrl);
+
+                var response = await client.GetAsync(apiUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+
+                    _logger.LogInformation("API Response: {Json}", json);
+
+                    subtopics = JsonSerializer.Deserialize<List<Subtopics>>(json,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }) ?? new List<Subtopics>();
+
+                    _logger.LogInformation("Subtopics Count: {Count}", subtopics.Count);
+                }
+                else
+                {
+                    _logger.LogError("API call failed. Status Code: {StatusCode}", response.StatusCode);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("API call failed.");
+                _logger.LogError(ex, "Exception occurred while calling Subtopic API");
             }
 
-            return View(list);
+            return View(subtopics);
         }
     }
 }

@@ -4,6 +4,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
 
+// Add HttpClient for API calls
+builder.Services.AddHttpClient();
+
+// Add API client service
+// builder.Services.AddScoped<ApiClientService>();
+
 
 var app = builder.Build();
 

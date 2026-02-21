@@ -8,21 +8,6 @@
 <link rel="stylesheet" href="~/css/results.css" />
 
 <div class="main-content">
-    <!-- Optional: Back Button -->
-    <!-- <a href="javascript:history.back()" class="back-button">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-        </svg>
-        Back to Subtopics
-    </a> -->
-
-    <!-- Optional: Summary Card -->
-    <!-- <div class="summary-card">
-        <div>
-            <div class="summary-label">Total Results</div>
-            <div class="summary-value">@(Model?.Count ?? 0)</div>
-        </div>
-    </div> -->
 
     <h2>Results</h2>
 
@@ -32,15 +17,18 @@
                id="searchInput"
                name="search"
                placeholder="Search by course ID"
-               style="padding:10px; border-radius:5px; border:2px solid #e0e0e0; margin-right:10px; flex:1; min-width:300px;" />
+               style="padding:10px; border-radius:5px; border:2px solid #e0e0e0; margin-right:10px; min-width:300px;" />
 
-        <button type="submit" style="padding:10px 20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:5px; font-weight:600; cursor:pointer;">
+        <button type="submit"
+                style="padding:10px 20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:5px; font-weight:600; cursor:pointer;">
             Search
         </button>
     </form>
 
     <!-- Search Result Message -->
-    <div id="searchMessage" style="margin-bottom:15px; padding:10px; border-radius:5px; display:none;"></div>
+    <div id="searchMessage"
+         style="margin-bottom:15px; padding:10px; border-radius:5px; display:none;">
+    </div>
 
     <!-- Table Container -->
     <div id="tableContainer">
@@ -54,17 +42,42 @@
                     <th>Result Text</th>
                 </tr>
             </thead>
+
             <tbody id="tableBody">
                 @if (Model != null && Model.Count > 0)
                 {
                     foreach (var item in Model)
                     {
-                        <tr data-result-id="@item.ResultId" data-course-id="@item.CourseId" data-result-text="@item.ResultText.ToLower()">
+                        var text = item.ResultText ?? "";
+                        var shortText = text.Length > 250 ? text.Substring(0, 250) + "..." : text;
+
+                        <tr data-course-id="@item.CourseId">
                             <td>@item.ResultId</td>
                             <td>@item.CourseId</td>
                             <td>@item.ChapterId</td>
                             <td>@item.SubtopicId</td>
-                            <td>@item.ResultText</td>
+                            <td>
+                                <div class="result-content">
+
+                                    <span class="short-text">
+                                        @shortText
+                                    </span>
+
+                                    @if (text.Length > 250)
+                                    {
+                                        <span class="full-text" style="display:none;">
+                                            @text
+                                        </span>
+
+                                        <a href="#"
+                                           class="read-toggle"
+                                           style="display:block; margin-top:6px; font-weight:600; color:#667eea;">
+                                            Read More
+                                        </a>
+                                    }
+
+                                </div>
+                            </td>
                         </tr>
                     }
                 }
@@ -83,144 +96,138 @@
         </table>
     </div>
 
-    <!-- Optional: Action Buttons -->
-    <!-- <div class="action-buttons">
-        <button class="btn btn-primary" onclick="window.print()">
-            Print Results
-        </button>
-        <a href="/Learning/Index" class="btn btn-secondary">
-            Back to Learning
-        </a>
-    </div> -->
 </div>
 
 @section Scripts {
-    <script>
-        // Add active class to current page in navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            const navLinks = document.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                if (link.textContent.trim() === 'Learning') {
-                    link.classList.add('active');
-                }
-            });
+
+<script>
+
+    // Highlight active navigation
+    document.addEventListener('DOMContentLoaded', function () {
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            if (link.textContent.trim() === 'Learning') {
+                link.classList.add('active');
+            }
         });
+    });
 
-        // Search functionality
-        document.getElementById("searchForm").addEventListener("submit", function (e) {
-            e.preventDefault();
 
-            const searchValue = document.getElementById("searchInput").value.trim();
-            const searchMessage = document.getElementById("searchMessage");
+    // =============================
+    // SEARCH FUNCTION (SubtopicId)
+    // =============================
+    document.getElementById("searchForm").addEventListener("submit", function (e) {
 
-            // Clear previous message
-            searchMessage.style.display = "none";
-            searchMessage.textContent = "";
+        e.preventDefault();
 
-            if (!searchValue) {
-                searchMessage.style.display = "block";
-                searchMessage.style.background = "#fff3cd";
-                searchMessage.style.color = "#856404";
-                searchMessage.style.border = "1px solid #ffeaa7";
-                searchMessage.textContent = "⚠️ Please enter a course ID to search";
+        const searchValue = document.getElementById("searchInput").value.trim();
+        const searchMessage = document.getElementById("searchMessage");
+
+        searchMessage.style.display = "none";
+        searchMessage.textContent = "";
+
+        if (!searchValue) {
+            searchMessage.style.display = "block";
+            searchMessage.style.background = "#fff3cd";
+            searchMessage.style.color = "#856404";
+            searchMessage.style.border = "1px solid #ffeaa7";
+            searchMessage.textContent = "⚠️ Please enter a Subtopic ID to search";
+            return;
+        }
+
+        const allRows = document.querySelectorAll("#tableBody tr");
+        let matchCount = 0;
+
+        allRows.forEach(row => {
+
+            const subtopicId = row.getAttribute("data-subtopic-id");
+
+            if (!subtopicId) {
+                row.style.display = "none";
                 return;
             }
 
-            // Get all rows
-            const allRows = document.querySelectorAll("#tableBody tr");
-            let matchCount = 0;
-
-            allRows.forEach(row => {
-                const courseId = row.getAttribute("data-course-id");
-                
-                // Skip if this is the "no data" or "empty state" row
-                if (!courseId) {
-                    row.style.display = "none";
-                    return;
-                }
-
-                // Check for exact or partial match
-                if (courseId.includes(searchValue)) {
-                    matchCount++;
-                    row.style.display = "";
-                    row.style.background = "#e8f4f8";
-                } else {
-                    row.style.display = "none";
-                    row.style.background = "";
-                }
-            });
-
-            // Handle search results
-            if (matchCount === 0) {
-                searchMessage.style.display = "block";
-                searchMessage.style.background = "#f8d7da";
-                searchMessage.style.color = "#721c24";
-                searchMessage.style.border = "1px solid #f5c6cb";
-                searchMessage.textContent = "❌ No results found with that course ID";
-            } else if (matchCount === 1) {
-                searchMessage.style.display = "block";
-                searchMessage.style.background = "#d4edda";
-                searchMessage.style.color = "#155724";
-                searchMessage.style.border = "1px solid #c3e6cb";
-                searchMessage.textContent = "✓ Found 1 result matching your search";
+            if (subtopicId.includes(searchValue)) {
+                matchCount++;
+                row.style.display = "";
+                row.style.background = "#e8f4f8";
             } else {
-                searchMessage.style.display = "block";
-                searchMessage.style.background = "#d1ecf1";
-                searchMessage.style.color = "#0c5460";
-                searchMessage.style.border = "1px solid #bee5eb";
-                searchMessage.textContent = `ℹ️ Found ${matchCount} results matching your search`;
+                row.style.display = "none";
+                row.style.background = "";
             }
+
         });
 
-        // Clear search highlighting when input is cleared
-        document.getElementById("searchInput").addEventListener("input", function() {
-            if (this.value.trim() === "") {
-                const allRows = document.querySelectorAll("#tableBody tr");
-                allRows.forEach(row => {
-                    row.style.display = "";
-                    row.style.background = "";
-                });
-                document.getElementById("searchMessage").style.display = "none";
-            }
-        });
-
-        // Optional: Truncate long result text with "Read More" functionality
-        function truncateText() {
-            const resultCells = document.querySelectorAll('tbody td:nth-child(5)');
-            resultCells.forEach(cell => {
-                const text = cell.textContent;
-                if (text.length > 200) {
-                    const truncated = text.substring(0, 200) + '...';
-                    const fullText = text;
-                    
-                    cell.innerHTML = `
-                        <span class="truncated-text">${truncated}</span>
-                        <span class="full-text" style="display:none;">${fullText}</span>
-                        <a href="#" class="read-more-link" style="color:#667eea; font-weight:600; display:block; margin-top:5px;">
-                            Read More
-                        </a>
-                    `;
-                    
-                    cell.querySelector('.read-more-link').addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const truncatedSpan = cell.querySelector('.truncated-text');
-                        const fullSpan = cell.querySelector('.full-text');
-                        
-                        if (fullSpan.style.display === 'none') {
-                            truncatedSpan.style.display = 'none';
-                            fullSpan.style.display = 'inline';
-                            this.textContent = 'Read Less';
-                        } else {
-                            truncatedSpan.style.display = 'inline';
-                            fullSpan.style.display = 'none';
-                            this.textContent = 'Read More';
-                        }
-                    });
-                }
-            });
+        if (matchCount === 0) {
+            searchMessage.style.display = "block";
+            searchMessage.style.background = "#f8d7da";
+            searchMessage.style.color = "#721c24";
+            searchMessage.style.border = "1px solid #f5c6cb";
+            searchMessage.textContent = "❌ No results found with that Subtopic ID";
+        }
+        else if (matchCount === 1) {
+            searchMessage.style.display = "block";
+            searchMessage.style.background = "#d4edda";
+            searchMessage.style.color = "#155724";
+            searchMessage.style.border = "1px solid #c3e6cb";
+            searchMessage.textContent = "✓ Found 1 result matching your search";
+        }
+        else {
+            searchMessage.style.display = "block";
+            searchMessage.style.background = "#d1ecf1";
+            searchMessage.style.color = "#0c5460";
+            searchMessage.style.border = "1px solid #bee5eb";
+            searchMessage.textContent = `ℹ️ Found ${matchCount} results matching your search`;
         }
 
-        // Uncomment to enable text truncation
-        // truncateText();
-    </script>
+    });
+
+
+
+    // Clear search if input empty
+    document.getElementById("searchInput").addEventListener("input", function () {
+
+        if (this.value.trim() === "") {
+
+            const allRows = document.querySelectorAll("#tableBody tr");
+
+            allRows.forEach(row => {
+                row.style.display = "";
+                row.style.background = "";
+            });
+
+            document.getElementById("searchMessage").style.display = "none";
+        }
+
+    });
+
+
+    // =============================
+    // READ MORE / READ LESS
+    // =============================
+    document.addEventListener("click", function (e) {
+
+        if (e.target.classList.contains("read-toggle")) {
+
+            e.preventDefault();
+
+            const container = e.target.closest(".result-content");
+            const shortText = container.querySelector(".short-text");
+            const fullText = container.querySelector(".full-text");
+
+            if (fullText.style.display === "none") {
+                shortText.style.display = "none";
+                fullText.style.display = "inline";
+                e.target.textContent = "Read Less";
+            } else {
+                shortText.style.display = "inline";
+                fullText.style.display = "none";
+                e.target.textContent = "Read More";
+            }
+        }
+
+    });
+
+</script>
+
 }

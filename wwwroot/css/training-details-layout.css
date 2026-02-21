@@ -1,0 +1,376 @@
+/* Training Requirements Page Styles - Matching enrollment.css theme */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Main Content Container */
+.main-content {
+    padding: 20px;
+}
+
+h2 {
+    color: #1345cf;
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+/* ─── Stats Grid ─────────────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto 25px auto;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon svg {
+    color: white;
+    fill: white;
+}
+
+/* Icon colour variants */
+.stat-icon.purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.stat-icon.green {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
+}
+
+.stat-icon.orange {
+    background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.35);
+}
+
+.stat-icon.blue {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.35);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* ─── Table Container ─────────────────────────────────────── */
+#tableContainer {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ─── Table Styles ────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+thead th {
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+    background-color: #f8f9ff;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+tbody td {
+    padding: 15px;
+    color: #333;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* ─── Role Cell ───────────────────────────────────────────── */
+.role-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #667eea;
+}
+
+.role-cell svg {
+    flex-shrink: 0;
+    fill: #667eea;
+}
+
+.role-cell strong {
+    color: #333;
+}
+
+/* ─── Domain Tag ──────────────────────────────────────────── */
+.domain-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(102, 126, 234, 0.25);
+}
+
+/* ─── Skill Badge ─────────────────────────────────────────── */
+.skill-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.skill-beginner {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.25);
+}
+
+.skill-intermediate {
+    background: rgba(253, 126, 20, 0.1);
+    color: #fd7e14;
+    border: 1px solid rgba(253, 126, 20, 0.25);
+}
+
+.skill-advanced {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.25);
+}
+
+/* ─── Course Cell ─────────────────────────────────────────── */
+.course-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.course-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.course-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 13px;
+}
+
+.course-id {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+}
+
+/* View link — matches enrollment.css anchor style */
+.btn-view-small {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.btn-view-small:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+/* ─── Pending Cell ────────────────────────────────────────── */
+.pending-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fd7e14;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.pending-cell svg {
+    fill: #fd7e14;
+    flex-shrink: 0;
+}
+
+/* ─── Empty State ─────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-icon {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.empty-icon svg {
+    fill: #667eea;
+    opacity: 0.7;
+}
+
+.empty-state h3 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #888;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+    }
+
+    thead th,
+    tbody td {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    #tableContainer {
+        padding: 15px;
+    }
+
+    .course-cell {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

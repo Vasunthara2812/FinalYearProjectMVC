@@ -5,46 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Training Requirements - Learning App</title>
     <link rel="stylesheet" href="~/css/training.css" />
+    <style>
+        .form-info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #1565c0;
+            font-size: 14px;
+        }
+        .loading-spinner {
+            display: none;
+            margin-left: 10px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2196F3;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     
 
     <div class="main-content">
         <div class="form-container">
-            <h2>Training Requirements</h2>
+            <h2>🎯 Training Requirements</h2>
+            
+            <div class="form-info">
+                <strong>ℹ️ How it works:</strong> Fill in your details below and we'll generate a personalized course for you using AI.
+            </div>
 
-            <form method="post">
-                <label for="role">Role</label>
-                <input type="text" id="role" name="role" placeholder="Enter your role" required />
+            <form method="post" id="trainingForm">
+                <label for="role">Role *</label>
+                <input type="text" id="role" name="role" placeholder="e.g., Backend developer, Frontend developer" required />
 
-                <label for="domain">Domain</label>
-                <input type="text" id="domain" name="domain" placeholder="Enter your domain" required />
+                <label for="domain">Domain *</label>
+                <input type="text" id="domain" name="domain" placeholder="e.g., Web development, Mobile development" required />
 
-                <label for="interest">Interest</label>
-                <input type="text" id="interest" name="interest" placeholder="Enter your interests" required />
+                <label for="interest">Interest *</label>
+                <input type="text" id="interest" name="interest" placeholder="e.g., Database design, API development" required />
 
-                <label for="skillLevel">Skill Level</label>
-                <input type="text" id="skillLevel" name="skillLevel" placeholder="E.g., Beginner, Intermediate, Advanced" required />
+                <label for="skillLevel">Skill Level *</label>
+                <select id="skillLevel" name="skillLevel" required>
+                    <option value="">-- Select Skill Level --</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
 
-                <label for="goal">Goal</label>
-                <input type="text" id="goal" name="goal" placeholder="What do you want to achieve?" required />
+                <label for="goal">Goal *</label>
+                <input type="text" id="goal" name="goal" placeholder="e.g., Good knowledge, Mastery, Career advancement" required />
 
-                <button type="submit">Submit</button>
+                <button type="submit" id="submitBtn">
+                    <span id="btnText">Generate Course</span>
+                    <span class="loading-spinner">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
 
                 @if (ViewBag.Error != null)
                 {
-                    <p class="message error-message">@ViewBag.Error</p>
+                    <p class="message error-message">❌ @ViewBag.Error</p>
+                }
+
+                @if (ViewBag.Warning != null)
+                {
+                    <p class="message warning-message" style="background-color: #fff3cd; border-left-color: #ffc107; color: #856404;">
+                        ⚠️ @ViewBag.Warning
+                    </p>
                 }
 
                 @if (ViewBag.Success != null)
                 {
-                    <p class="message success-message">@ViewBag.Success</p>
+                    <p class="message success-message">✅ @ViewBag.Success</p>
                 }
             </form>
         </div>
     </div>
 
     <script>
+        // Form submission handler
+        document.getElementById('trainingForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.querySelector('.loading-spinner');
+            
+            submitBtn.disabled = true;
+            btnText.textContent = 'Generating...';
+            spinner.style.display = 'inline';
+            
+            // The form will submit normally after this
+            return true;
+        });
+
         // Logout Handler
         function handleLogout(event) {
             event.preventDefault();
@@ -70,19 +133,6 @@
                 window.location.href = '/Account/SignIn';
             });
         }
-
-        // Form validation feedback
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const button = this.querySelector('button[type="submit"]');
-            button.disabled = true;
-            button.textContent = 'Submitting...';
-            
-            // Re-enable after a timeout in case of error
-            setTimeout(() => {
-                button.disabled = false;
-                button.textContent = 'Submit';
-            }, 3000);
-        });
     </script>
 </body>
 </html>

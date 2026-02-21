@@ -1,0 +1,291 @@
+@model List<LearningApp.Models.Chapter>
+
+@{
+    ViewData["Title"] = "Course Chapters";
+    var course = ViewBag.Course as LearningApp.Models.Course;
+    var courseId = (int?)ViewBag.CourseId ?? 0;
+    var userId = (int?)ViewBag.UserId ?? 0;
+}
+
+<div class="chapters-container">
+    <!-- Course Header with Progress -->
+    <div class="course-header">
+        <div class="course-info">
+            <h1>@course?.CourseName</h1>
+            <p class="course-subtitle">@course?.TotalChapters Chapters | Complete your learning journey</p>
+        </div>
+        <div class="progress-section">
+            <div class="progress-label">
+                <span>Course Progress</span>
+                <span id="progressPercentage">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-details">
+                <span id="completedCount">0</span> of <span id="totalCount">0</span> subtopics completed
+            </p>
+        </div>
+    </div>
+
+    <!-- Chapters Table -->
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="chapters-table-container">
+            <table class="chapters-table">
+                <thead>
+                    <tr>
+                        <th>Chapter</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var chapter in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="chapter-number">Ch. @chapter.ChapterNumber</span>
+                            </td>
+                            <td>
+                                <strong>@chapter.ChapterName</strong>
+                            </td>
+                            <td>
+                                @(!string.IsNullOrEmpty(chapter.ChapterDescription) ? chapter.ChapterDescription : "No description")
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Subtopics", "Course", new { chapterId = chapter.ChapterId, courseId = courseId })" 
+                                   class="btn btn-primary btn-sm">
+                                    View Chapter
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="no-chapters-message">
+            <p>No chapters available for this course yet.</p>
+        </div>
+    }
+
+    <!-- Back Button -->
+    <div class="navigation-controls">
+        <a href="@Url.Action("Index", "Course")" class="btn btn-secondary">
+            ← Back to Courses
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userId = @userId;
+        const courseId = @courseId;
+
+        if (userId > 0 && courseId > 0) {
+            updateCourseProgress(userId, courseId);
+        }
+    });
+
+    function updateCourseProgress(userId, courseId) {
+        fetch(`/Course/GetCourseProgress?userId=${userId}&courseId=${courseId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.progressPercentage !== undefined) {
+                    document.getElementById('progressPercentage').textContent = 
+                        Math.round(data.progressPercentage) + '%';
+                    document.getElementById('progressFill').style.width = 
+                        data.progressPercentage + '%';
+                    document.getElementById('completedCount').textContent = 
+                        data.completedSubtopics;
+                    document.getElementById('totalCount').textContent = 
+                        data.totalSubtopics;
+                }
+            })
+            .catch(error => console.error('Error loading progress:', error));
+    }
+</script>
+
+<style>
+.chapters-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.course-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 30px;
+}
+
+.course-info h1 {
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+}
+
+.course-subtitle {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.progress-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.progress-bar {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    height: 25px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.progress-details {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.chapters-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.chapters-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.chapters-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #667eea;
+}
+
+.chapters-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.chapters-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.3s ease;
+}
+
+.chapters-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.chapters-table td {
+    padding: 15px;
+}
+
+.chapter-number {
+    display: inline-block;
+    background-color: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.btn {
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+.no-chapters-message {
+    text-align: center;
+    padding: 50px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #7f8c8d;
+}
+
+.navigation-controls {
+    margin-top: 30px;
+}
+
+@@media (max-width: 768px) {
+    .course-header {
+        flex-direction: column;
+    }
+
+    .chapters-table {
+        font-size: 0.9rem;
+    }
+
+    .chapters-table th,
+    .chapters-table td {
+        padding: 10px;
+    }
+}
+</style>

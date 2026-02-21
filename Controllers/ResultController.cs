@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using LearningApp.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +12,7 @@ namespace LearningApp.Controllers
 {
     public class ResultController : Controller
     {
-        private const string ApiUrl = "http://localhost:5211/api/result";
+        private const string ApiBaseUrl = "http://localhost:5211/api/result";
         private readonly ILogger<ResultController> _logger;
 
         public ResultController(ILogger<ResultController> logger)
@@ -20,50 +20,66 @@ namespace LearningApp.Controllers
             _logger = logger;
         }
 
+        // id = SubtopicId
         public async Task<IActionResult> Index(int id)
         {
+            // Session check
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("User")))
             {
                 return RedirectToAction("Index", "Login");
             }
-            using var client = new HttpClient();
 
-            var apiUrl = ApiUrl;
+            List<Result> resultList = new List<Result>();
 
-            // Build query string properly
-            var queryParams = new List<string>();
-
-            if(id > 0)
-                queryParams.Add($"courseId={id}");
-
-
-
-            if (queryParams.Any())
-                apiUrl += "?" + string.Join("&", queryParams);
-            Console.WriteLine($"API URL: {apiUrl}");
-            Console.WriteLine($"CourseId: {id}");
-            var response = await client.GetAsync(apiUrl);
-
-            var list = new List<Result>();
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var json = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Response JSON: {json}");
+                using (var client = new HttpClient())
+                {
+                    var apiUrl = $"{ApiBaseUrl}/{id}";
 
-                list = JsonSerializer.Deserialize<List<Result>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new List<Result>();
-                    Console.WriteLine($"Deserialized List Count: {list.Count}");
+                    _logger.LogInformation("Calling API: {Url}", apiUrl);
 
-                
+                    var response = await client.GetAsync(apiUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+
+                        _logger.LogInformation("API Response: {Json}", json);
+
+                        // API may return single object
+                        if (json.Trim().StartsWith("["))
+                        {
+                            resultList = JsonSerializer.Deserialize<List<Result>>(json,
+                                new JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                }) ?? new List<Result>();
+                        }
+                        else
+                        {
+                            var single = JsonSerializer.Deserialize<Result>(json,
+                                new JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                });
+
+                            if (single != null)
+                                resultList.Add(single);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("API Error: {StatusCode}", response.StatusCode);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching result");
             }
 
-           
-
-            return View(list);
+            return View(resultList);
         }
-
-
     }
 }

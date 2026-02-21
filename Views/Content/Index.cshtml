@@ -1,0 +1,327 @@
+@model List<LearningApp.Models.Content>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Generated Content";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="~/css/content-index.css" />
+
+<div class="page-header">
+    <div class="page-title">Generated <span>Content</span></div>
+    <a asp-action="Create" class="btn-new">+ Create New</a>
+</div>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="error-box">@ViewBag.Error</div>
+}
+
+<div class="content-wrapper">
+    @if (Model != null && Model.Count > 0)
+    {
+        foreach (var item in Model)
+        {
+            var chapters = new List<JsonElement>();
+            try
+            {
+                var doc = JsonDocument.Parse(item.CourseJson ?? "[]");
+                foreach (var ch in doc.RootElement.EnumerateArray())
+                    chapters.Add(ch);
+            }
+            catch { }
+
+            // Count total subtopics for this course
+            int totalSubtopics = 0;
+            foreach (var ch in chapters)
+            {
+                if (ch.TryGetProperty("subtopics", out var stArr))
+                    totalSubtopics += stArr.GetArrayLength();
+            }
+
+            var courseKey = $"course-{item.Id}";
+
+            <div class="course-card" id="card-@item.Id" data-course-id="@item.Id" data-total="@totalSubtopics">
+                <div class="course-header">
+                    <span class="course-badge">Course #@item.CourseId</span>
+                    <div style="flex:1">
+                        <div class="course-name">@item.CourseName</div>
+                        <div class="course-meta">
+                            @item.CreatedAt.ToString("MMM dd, yyyy · HH:mm")
+                            &nbsp;·&nbsp; @chapters.Count chapter@(chapters.Count != 1 ? "s" : "")
+                            &nbsp;·&nbsp; @totalSubtopics subtopic@(totalSubtopics != 1 ? "s" : "")
+                        </div>
+                    </div>
+                    <div class="course-progress-ring">
+                        <svg width="56" height="56" viewBox="0 0 56 56">
+                            <circle class="ring-bg" cx="28" cy="28" r="22" />
+                            <circle class="ring-fill" id="ring-@item.Id" cx="28" cy="28" r="22"
+                                    stroke-dasharray="138.2"
+                                    stroke-dashoffset="138.2" />
+                        </svg>
+                        <span class="ring-label" id="ring-label-@item.Id">0%</span>
+                    </div>
+                </div>
+
+                <!-- Course overall progress bar -->
+                <div class="course-progress-bar-wrap">
+                    <div class="course-progress-bar-track">
+                        <div class="course-progress-bar-fill" id="coursebar-@item.Id" style="width:0%"></div>
+                    </div>
+                    <span class="course-progress-text" id="coursetext-@item.Id">0 / @totalSubtopics completed</span>
+                </div>
+
+                <div class="chapters-list">
+                    @if (chapters.Count == 0)
+                    {
+                        <div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0;">No chapters found in JSON.</div>
+                    }
+                    @foreach (var chapter in chapters)
+                    {
+                        var chapterNum = chapter.TryGetProperty("chapter_number", out var numEl) ? numEl.GetInt32() : 0;
+                        var chapterName = chapter.TryGetProperty("chapter_name", out var nameEl) ? nameEl.GetString() : "Untitled Chapter";
+                        var chapterDesc = chapter.TryGetProperty("chapter_description", out var descEl) ? descEl.GetString() : "";
+
+                        var subtopics = new List<JsonElement>();
+                        if (chapter.TryGetProperty("subtopics", out var stArr2))
+                            foreach (var st in stArr2.EnumerateArray())
+                                subtopics.Add(st);
+
+                        var chapId = $"ch-{item.Id}-{chapterNum}";
+
+                        <div class="chapter-block" id="chblock-@chapId">
+                            <div class="chapter-header" onclick="toggleSection('@chapId-body', '@chapId-toggle')">
+                                <div class="chapter-num">@chapterNum</div>
+                                <div style="flex:1">
+                                    <div class="chapter-title">@chapterName</div>
+                                    @if (!string.IsNullOrEmpty(chapterDesc))
+                                    {
+                                        <div class="chapter-desc">@chapterDesc</div>
+                                    }
+                                    <!-- Chapter progress bar -->
+                                    <div class="chapter-progress-wrap">
+                                        <div class="chapter-progress-track">
+                                            <div class="chapter-progress-fill" id="chbar-@chapId" style="width:0%"></div>
+                                        </div>
+                                        <span class="chapter-progress-label" id="chlabel-@chapId">0 / @subtopics.Count done</span>
+                                    </div>
+                                </div>
+                                <span class="chapter-toggle" id="@chapId-toggle">&#9660;</span>
+                            </div>
+                            <div class="chapter-body" id="@chapId-body">
+                                @foreach (var subtopic in subtopics)
+                                {
+                                    var stName = subtopic.TryGetProperty("subtopic_name", out var snEl) ? snEl.GetString() : "Untitled";
+                                    var stContent = subtopic.TryGetProperty("content", out var scEl) ? scEl.GetString() : "";
+                                    var stKey = $"st-{item.Id}-{chapterNum}-{Uri.EscapeDataString(stName ?? "x")}";
+                                    var stToggleId = $"toggle-{stKey}";
+                                    var stContentId = $"content-{stKey}";
+
+                                    <div class="subtopic-block" id="stblock-@stKey" data-key="@stKey" data-course="@item.Id" data-chapter="@chapId" data-chapter-total="@subtopics.Count">
+                                        <div class="subtopic-header" onclick="toggleSubtopic('@stContentId', '@stToggleId')">
+                                            <div class="subtopic-dot" id="dot-@stKey"></div>
+                                            <span class="subtopic-name">@stName</span>
+                                            <span class="subtopic-status" id="status-@stKey"></span>
+                                            <span class="subtopic-toggle" id="@stToggleId">&#9660;</span>
+                                        </div>
+                                        <div class="subtopic-content" id="@stContentId">
+                                            <p class="subtopic-text">@stContent</p>
+                                            <div class="subtopic-actions">
+                                                <button class="btn-done" id="btn-@stKey"
+                                                        onclick="markDone('@stKey', '@item.Id', '@chapId', @subtopics.Count)">
+                                                    &#10003; Mark as Done
+                                                </button>
+                                                <button class="btn-undo" id="undo-@stKey"
+                                                        onclick="markUndone('@stKey', '@item.Id', '@chapId', @subtopics.Count)"
+                                                        style="display:none">
+                                                    &#8635; Mark as Undone
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M9 12h6m-3-3v6M4 6h16M4 10h10M4 14h7M4 18h5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>No records found.</div>
+        </div>
+    }
+</div>
+
+<script>
+    // ── Toggle helpers ──────────────────────────────────────────
+    function toggleSection(bodyId, toggleId) {
+        var body = document.getElementById(bodyId);
+        var toggle = document.getElementById(toggleId);
+        if (!body) return;
+        body.classList.toggle('collapsed');
+        if (toggle) toggle.classList.toggle('rotated');
+    }
+
+    function toggleSubtopic(contentId, toggleId) {
+        var content = document.getElementById(contentId);
+        var toggle = document.getElementById(toggleId);
+        if (!content) return;
+        content.classList.toggle('open');
+        if (toggle) toggle.classList.toggle('rotated');
+    }
+
+    // ── State helpers ───────────────────────────────────────────
+    function getProgress() {
+        try { return JSON.parse(localStorage.getItem('learningProgress') || '{}'); }
+        catch (e) { return {}; }
+    }
+
+    function saveProgress(p) {
+        localStorage.setItem('learningProgress', JSON.stringify(p));
+    }
+
+    function isDone(key) {
+        return getProgress()[key] === true;
+    }
+
+    // ── Apply done state to a subtopic block ────────────────────
+    function applyState(key, done) {
+        var block   = document.getElementById('stblock-' + key);
+        var dot     = document.getElementById('dot-' + key);
+        var status  = document.getElementById('status-' + key);
+        var btnDone = document.getElementById('btn-' + key);
+        var btnUndo = document.getElementById('undo-' + key);
+        if (!block) return;
+
+        if (done) {
+            block.classList.add('done');
+            if (dot)     dot.classList.add('done');
+            if (status)  status.textContent = '✓ Completed';
+            if (btnDone) btnDone.style.display = 'none';
+            if (btnUndo) btnUndo.style.display = 'inline-flex';
+        } else {
+            block.classList.remove('done');
+            if (dot)     dot.classList.remove('done');
+            if (status)  status.textContent = '';
+            if (btnDone) btnDone.style.display = 'inline-flex';
+            if (btnUndo) btnUndo.style.display = 'none';
+        }
+    }
+
+    // ── Count done subtopics for a chapter ──────────────────────
+    function countChapterDone(chapId) {
+        var blocks = document.querySelectorAll('[data-chapter="' + chapId + '"]');
+        var done = 0;
+        blocks.forEach(function(b) { if (isDone(b.dataset.key)) done++; });
+        return { done: done, total: blocks.length };
+    }
+
+    // ── Count done subtopics for a course ───────────────────────
+    function countCourseDone(courseId) {
+        var blocks = document.querySelectorAll('[data-course="' + courseId + '"]');
+        var done = 0;
+        blocks.forEach(function(b) { if (isDone(b.dataset.key)) done++; });
+        return { done: done, total: blocks.length };
+    }
+
+    // ── Update chapter progress bar ──────────────────────────────
+    function updateChapterBar(chapId) {
+        var r = countChapterDone(chapId);
+        var pct = r.total > 0 ? Math.round((r.done / r.total) * 100) : 0;
+        var bar   = document.getElementById('chbar-' + chapId);
+        var label = document.getElementById('chlabel-' + chapId);
+        if (bar)   bar.style.width = pct + '%';
+        if (label) label.textContent = r.done + ' / ' + r.total + ' done';
+
+        // colour shift
+        if (bar) {
+            bar.className = 'chapter-progress-fill';
+            if (pct === 100) bar.classList.add('complete');
+            else if (pct >= 50) bar.classList.add('half');
+        }
+    }
+
+    // ── Update course ring + bar ─────────────────────────────────
+    function updateCourseRing(courseId) {
+        var r    = countCourseDone(courseId);
+        var pct  = r.total > 0 ? Math.round((r.done / r.total) * 100) : 0;
+        var circ = 138.2; // 2 * PI * 22
+
+        var ring      = document.getElementById('ring-' + courseId);
+        var ringLabel = document.getElementById('ring-label-' + courseId);
+        var bar       = document.getElementById('coursebar-' + courseId);
+        var text      = document.getElementById('coursetext-' + courseId);
+
+        if (ring)      ring.style.strokeDashoffset = circ - (circ * pct / 100);
+        if (ringLabel) ringLabel.textContent = pct + '%';
+        if (bar)       bar.style.width = pct + '%';
+        if (text)      text.textContent = r.done + ' / ' + r.total + ' completed';
+
+        if (ring) {
+            ring.className = 'ring-fill';
+            if (pct === 100) ring.classList.add('complete');
+        }
+        if (bar) {
+            bar.className = 'course-progress-bar-fill';
+            if (pct === 100) bar.classList.add('complete');
+        }
+    }
+
+    // ── Mark done ────────────────────────────────────────────────
+    function markDone(key, courseId, chapId, chapterTotal) {
+        var p = getProgress();
+        p[key] = true;
+        saveProgress(p);
+        applyState(key, true);
+        updateChapterBar(chapId);
+        updateCourseRing(courseId);
+
+        // If chapter is 100% done, show celebration briefly
+        var r = countChapterDone(chapId);
+        if (r.done === r.total) showChapterComplete(chapId);
+    }
+
+    // ── Mark undone ──────────────────────────────────────────────
+    function markUndone(key, courseId, chapId, chapterTotal) {
+        var p = getProgress();
+        delete p[key];
+        saveProgress(p);
+        applyState(key, false);
+        updateChapterBar(chapId);
+        updateCourseRing(courseId);
+    }
+
+    // ── Chapter complete flash ───────────────────────────────────
+    function showChapterComplete(chapId) {
+        var block = document.getElementById('chblock-' + chapId);
+        if (!block) return;
+        block.classList.add('chapter-complete-flash');
+        setTimeout(function() { block.classList.remove('chapter-complete-flash'); }, 1200);
+    }
+
+    // ── Init on load ─────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        var blocks = document.querySelectorAll('[data-key]');
+        var chapters = new Set();
+        var courses  = new Set();
+
+        blocks.forEach(function(b) {
+            var key      = b.dataset.key;
+            var courseId = b.dataset.course;
+            var chapId   = b.dataset.chapter;
+            applyState(key, isDone(key));
+            chapters.add(chapId);
+            courses.add(courseId);
+        });
+
+        chapters.forEach(function(c) { updateChapterBar(c); });
+        courses.forEach(function(c)  { updateCourseRing(c); });
+    });
+</script>

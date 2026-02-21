@@ -1,0 +1,634 @@
+@model List<LearningApp.Models.Subtopic>
+
+@{
+    ViewData["Title"] = "Chapter Subtopics";
+    var chapter = ViewBag.Chapter as LearningApp.Models.Chapter;
+    var courseId = (int?)ViewBag.CourseId ?? 0;
+    var chapterId = (int?)ViewBag.ChapterId ?? 0;
+    var userId = (int?)ViewBag.UserId ?? 0;
+}
+
+<div class="subtopics-container">
+    <!-- Chapter Header with Progress -->
+    <div class="chapter-header">
+        <div class="chapter-info">
+            <h1>@chapter?.ChapterName</h1>
+            <p class="chapter-subtitle">
+                Chapter @chapter?.ChapterNumber | 
+                @(Model?.Count ?? 0) Subtopics
+            </p>
+            @if (!string.IsNullOrEmpty(chapter?.ChapterDescription))
+            {
+                <p class="chapter-description">@chapter.ChapterDescription</p>
+            }
+        </div>
+        <div class="progress-section">
+            <div class="progress-label">
+                <span>Progress</span>
+                <span id="progressPercentage">0%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            <p class="progress-details">
+                <span id="completedCount">0</span> of <span id="totalCount">@Model?.Count ?? 0</span> completed
+            </p>
+        </div>
+    </div>
+
+    <!-- Subtopics Content -->
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="subtopics-list">
+            @foreach (var subtopic in Model.OrderBy(s => s.SubtopicNumber))
+            {
+                <div class="subtopic-item" data-subtopic-id="@subtopic.SubtopicId">
+                    <div class="subtopic-header">
+                        <div class="subtopic-title-section">
+                            <button class="expand-btn" onclick="toggleContent(this, @subtopic.SubtopicId)">
+                                <span class="expand-icon">▼</span>
+                            </button>
+                            <div class="subtopic-info">
+                                <span class="subtopic-number">@subtopic.SubtopicNumber</span>
+                                <h3>@subtopic.SubtopicName</h3>
+                                @if (!string.IsNullOrEmpty(subtopic.SubtopicDescription))
+                                {
+                                    <p class="subtopic-description">@subtopic.SubtopicDescription</p>
+                                }
+                            </div>
+                        </div>
+                        <div class="subtopic-meta">
+                            <span class="duration-badge">
+                                ⏱ @subtopic.EstimatedDurationMinutes min
+                            </span>
+                            <span class="status-badge" id="status-@subtopic.SubtopicId">Not Started</span>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Content -->
+                    <div class="subtopic-content-wrapper" id="content-@subtopic.SubtopicId" style="display: none;">
+                        <div class="subtopic-content-inner">
+                            <div class="content-area" id="content-display-@subtopic.SubtopicId">
+                                <div class="loading">Loading content...</div>
+                            </div>
+                            <div class="content-actions">
+                                <button class="btn btn-primary" onclick="markSubtopicViewed(@userId, @subtopic.SubtopicId)">
+                                    Mark as Viewed
+                                </button>
+                                <button class="btn btn-success" onclick="markSubtopicCompleted(@userId, @subtopic.SubtopicId)">
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="no-subtopics-message">
+            <p>No subtopics available for this chapter yet.</p>
+        </div>
+    }
+
+    <!-- Navigation -->
+    <div class="navigation-controls">
+        <a href="@Url.Action("Chapters", "Course", new { courseId = courseId })" class="btn btn-secondary">
+            ← Back to Chapters
+        </a>
+        <a href="@Url.Action("Index", "Course")" class="btn btn-secondary">
+            ← Back to Courses
+        </a>
+    </div>
+</div>
+
+<script>
+    const userId = @userId;
+    const courseId = @courseId;
+    const chapterId = @chapterId;
+
+    function toggleContent(button, subtopicId) {
+        const contentWrapper = document.getElementById('content-' + subtopicId);
+        const displayArea = document.getElementById('content-display-' + subtopicId);
+        const isExpanded = contentWrapper.style.display !== 'none';
+
+        if (isExpanded) {
+            // Close
+            contentWrapper.style.display = 'none';
+            button.querySelector('.expand-icon').textContent = '▼';
+        } else {
+            // Open and load content if not already loaded
+            contentWrapper.style.display = 'block';
+            button.querySelector('.expand-icon').textContent = '▲';
+
+            if (displayArea.querySelector('.loading')) {
+                loadSubtopicContent(subtopicId);
+            }
+        }
+    }
+
+    function loadSubtopicContent(subtopicId) {
+        const displayArea = document.getElementById('content-display-' + subtopicId);
+
+        fetch(`/Course/GetSubtopicContent?subtopicId=${subtopicId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayArea.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    // Format content with markdown-like styling
+                    const formattedContent = formatContent(data.fullContent);
+                    displayArea.innerHTML = `
+                        <div class="formatted-content">
+                            ${formattedContent}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayArea.innerHTML = '<div class="error">Failed to load content</div>';
+            });
+    }
+
+    function formatContent(content) {
+        if (!content) return '<p>No content available</p>';
+
+        // Basic markdown formatting
+        let formatted = content
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^#+\s+(.+?)$/gm, (match, title) => {
+                const level = match.match(/^#+/)[0].length;
+                return `<h${level} class="content-heading">${title}</h${level}>`;
+            });
+
+        return `<p>${formatted}</p>`;
+    }
+
+    function markSubtopicViewed(userId, subtopicId) {
+        updateProgress(userId, subtopicId, true, false);
+    }
+
+    function markSubtopicCompleted(userId, subtopicId) {
+        updateProgress(userId, subtopicId, true, true);
+    }
+
+    function updateProgress(userId, subtopicId, isViewed, isCompleted) {
+        const data = {
+            userId: userId,
+            subtopicId: subtopicId,
+            isViewed: isViewed,
+            isCompleted: isCompleted
+        };
+
+        fetch('/Course/UpdateProgress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Update status badge
+                const statusBadge = document.getElementById('status-' + subtopicId);
+                if (isCompleted) {
+                    statusBadge.textContent = '✓ Completed';
+                    statusBadge.className = 'status-badge completed';
+                } else {
+                    statusBadge.textContent = '✓ Viewed';
+                    statusBadge.className = 'status-badge viewed';
+                }
+
+                // Update course progress
+                updateCourseProgress(userId, courseId);
+
+                // Show success message
+                showNotification(isCompleted ? 'Subtopic marked as completed!' : 'Subtopic marked as viewed!');
+            } else {
+                showNotification('Error updating progress: ' + (result.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error updating progress', 'error');
+        });
+    }
+
+    function updateCourseProgress(userId, courseId) {
+        fetch(`/Course/GetCourseProgress?userId=${userId}&courseId=${courseId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.progressPercentage !== undefined) {
+                    document.getElementById('progressPercentage').textContent = 
+                        Math.round(data.progressPercentage) + '%';
+                    document.getElementById('progressFill').style.width = 
+                        data.progressPercentage + '%';
+                    document.getElementById('completedCount').textContent = 
+                        data.completedSubtopics;
+
+                    // Check if course is completed
+                    if (data.isCompleted) {
+                        showNotification('🎉 Congratulations! Course completed!', 'success');
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading progress:', error));
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (userId > 0 && courseId > 0) {
+            updateCourseProgress(userId, courseId);
+        }
+    });
+</script>
+
+<style>
+@@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.subtopics-container {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.chapter-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 30px;
+}
+
+.chapter-info h1 {
+    font-size: 2rem;
+    margin: 0 0 10px 0;
+}
+
+.chapter-subtitle {
+    margin: 0 0 10px 0;
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+.chapter-description {
+    margin: 10px 0 0 0;
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+.progress-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    height: 25px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.progress-details {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.subtopics-list {
+    margin-bottom: 30px;
+}
+
+.subtopic-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.subtopic-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.subtopic-header {
+    padding: 15px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.subtopic-header:hover {
+    background-color: #f0f1f3;
+}
+
+.subtopic-title-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    flex: 1;
+}
+
+.expand-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    color: #667eea;
+    transition: transform 0.3s ease;
+    margin-top: 3px;
+}
+
+.expand-btn:hover {
+    transform: scale(1.2);
+}
+
+.expand-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.subtopic-info h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.subtopic-number {
+    display: inline-block;
+    background-color: #667eea;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-right: 10px;
+    white-space: nowrap;
+}
+
+.subtopic-description {
+    margin: 5px 0 0 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.subtopic-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.duration-badge {
+    background-color: #e8f4f8;
+    color: #0277bd;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.status-badge {
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.viewed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.subtopic-content-wrapper {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.subtopic-content-inner {
+    display: flex;
+    flex-direction: column;
+}
+
+.content-area {
+    margin-bottom: 20px;
+    line-height: 1.7;
+    color: #333;
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.formatted-content {
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+.formatted-content p {
+    margin: 15px 0;
+}
+
+.formatted-content strong {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.formatted-content .content-heading {
+    color: #2c3e50;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.loading {
+    text-align: center;
+    color: #7f8c8d;
+    padding: 20px;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.content-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+}
+
+.btn-success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #45a049;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.no-subtopics-message {
+    text-align: center;
+    padding: 50px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #7f8c8d;
+}
+
+.navigation-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@@media (max-width: 768px) {
+    .chapter-header {
+        flex-direction: column;
+    }
+
+    .subtopic-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .subtopic-meta {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .content-area {
+        max-height: none;
+    }
+
+    .content-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>

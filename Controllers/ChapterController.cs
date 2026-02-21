@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using LearningApp.Models;
@@ -22,45 +21,75 @@ namespace LearningApp.Controllers
 
         public async Task<IActionResult> Index(int id)
         {
+            // Check session
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("User")))
             {
                 return RedirectToAction("Index", "Login");
             }
+
             using var client = new HttpClient();
 
-            var apiUrl = ApiUrl;
+            string endpoint = $"{ApiUrl}/{id}";
+            _logger.LogInformation($"Calling API Endpoint: {endpoint}");
 
-            // Build query string properly
-            var queryParams = new List<string>();
-            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
-            if(id > 0)
-                queryParams.Add($"courseId={id}");
+            var chapters = new List<Chapters>();
 
-
-            if (queryParams.Any())
-                apiUrl += "?" + string.Join("&", queryParams);
-            Console.WriteLine($"API URL: {apiUrl}");
-            Console.WriteLine($"CourseId: {id}");
-            var response = await client.GetAsync(apiUrl);
-
-            var list = new List<Chapters>();
-
-            if (response.IsSuccessStatusCode)
+            try
             {
+                var response = await client.GetAsync(endpoint);
                 var json = await response.Content.ReadAsStringAsync();
 
-                list = JsonSerializer.Deserialize<List<Chapters>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new List<Chapters>();
+                _logger.LogInformation($"Response Status: {response.StatusCode}");
+                _logger.LogInformation($"Response Body: {json}");
 
-                
+                if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(json))
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                    // Try deserialize as LIST first
+                    try
+                    {
+                        var chapterList = JsonSerializer.Deserialize<List<Chapters>>(json, options);
+                        if (chapterList != null && chapterList.Count > 0)
+                        {
+                            chapters = chapterList;
+                        }
+                        else
+                        {
+                            // Try deserialize as SINGLE object
+                            var singleChapter = JsonSerializer.Deserialize<Chapters>(json, options);
+                            if (singleChapter != null)
+                            {
+                                chapters.Add(singleChapter);
+                            }
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // If list fails, try single object
+                        var singleChapter = JsonSerializer.Deserialize<Chapters>(json, options);
+                        if (singleChapter != null)
+                        {
+                            chapters.Add(singleChapter);
+                        }
+                    }
+                }
+                else
+                {
+                    ViewBag.Error = "No chapters found.";
+                    _logger.LogWarning("API returned unsuccessful status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error calling API: {ex.Message}");
+                ViewBag.Error = "Error loading chapters.";
             }
 
-           
-
-            return View(list);
+            return View(chapters);
         }
-
-
     }
 }

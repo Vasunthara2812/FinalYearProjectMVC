@@ -51,13 +51,13 @@
                 {
                     foreach (var item in Model)
                     {
-                        <tr data-subtopic-id="@item.subtopicId" data-subtopic-name="@item.subtopicName.ToLower()">
-                            <td>@item.subtopicId</td>
-                            <td>@item.chapterId</td>
-                            <td>@item.courseId</td>
-                            <td>@item.subtopicName</td>
+                        <tr data-subtopic-id="@item.SubtopicId" data-subtopic-name="@item.SubtopicName.ToLower()">
+                            <td>@item.SubtopicId</td>
+                            <td>@item.ChapterId</td>
+                            <td>@item.CourseId</td>
+                            <td>@item.SubtopicName</td>
                             <td>
-                                <a href="/Result/Index/@item.courseId">
+                                <a href="/Result/Index/@item.SubtopicId">
                                     View
                                 </a>
                             </td>

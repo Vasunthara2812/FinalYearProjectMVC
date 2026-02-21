@@ -49,6 +49,7 @@ namespace LearningApp.Controllers
             };
 
             var json = JsonSerializer.Serialize(data);
+            Console.WriteLine($"Serialized JSON: {json}"); // Debug log to check JSON format
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync(ApiUrl, content);
