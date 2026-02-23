@@ -160,6 +160,10 @@
 </div>
 
 <script>
+    const USER_ID = '@ViewBag.UserId';
+    const API_BASE = 'http://localhost:5211';
+    let progressCache = {};
+
     // ── Toggle helpers ──────────────────────────────────────────
     function toggleSection(bodyId, toggleId) {
         var body = document.getElementById(bodyId);
@@ -177,18 +181,37 @@
         if (toggle) toggle.classList.toggle('rotated');
     }
 
-    // ── State helpers ───────────────────────────────────────────
-    function getProgress() {
-        try { return JSON.parse(localStorage.getItem('learningProgress') || '{}'); }
-        catch (e) { return {}; }
+    // ── Load all progress from DB ───────────────────────────────
+    async function loadProgress() {
+        try {
+            const res = await fetch(`${API_BASE}/api/Progress/${encodeURIComponent(USER_ID)}`);
+            if (res.ok) progressCache = await res.json();
+        } catch (e) {
+            console.error('Failed to load progress', e);
+        }
     }
 
-    function saveProgress(p) {
-        localStorage.setItem('learningProgress', JSON.stringify(p));
+    // ── Save a single key to DB ─────────────────────────────────
+    async function saveProgressToDb(key, isDone) {
+        progressCache[key] = isDone;
+        try {
+            const res = await fetch(`${API_BASE}/api/Progress`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: USER_ID,
+                    subtopicKey: key,
+                    isDone: isDone
+                })
+            });
+            console.log('Response status:', res.status);
+        } catch (e) {
+            console.error('Failed to save progress', e);
+        }
     }
 
     function isDone(key) {
-        return getProgress()[key] === true;
+        return progressCache[key] === true;
     }
 
     // ── Apply done state to a subtopic block ────────────────────
@@ -215,7 +238,7 @@
         }
     }
 
-    // ── Count done subtopics for a chapter ──────────────────────
+    // ── Count helpers ───────────────────────────────────────────
     function countChapterDone(chapId) {
         var blocks = document.querySelectorAll('[data-chapter="' + chapId + '"]');
         var done = 0;
@@ -223,7 +246,6 @@
         return { done: done, total: blocks.length };
     }
 
-    // ── Count done subtopics for a course ───────────────────────
     function countCourseDone(courseId) {
         var blocks = document.querySelectorAll('[data-course="' + courseId + '"]');
         var done = 0;
@@ -240,7 +262,6 @@
         if (bar)   bar.style.width = pct + '%';
         if (label) label.textContent = r.done + ' / ' + r.total + ' done';
 
-        // colour shift
         if (bar) {
             bar.className = 'chapter-progress-fill';
             if (pct === 100) bar.classList.add('complete');
@@ -252,7 +273,7 @@
     function updateCourseRing(courseId) {
         var r    = countCourseDone(courseId);
         var pct  = r.total > 0 ? Math.round((r.done / r.total) * 100) : 0;
-        var circ = 138.2; // 2 * PI * 22
+        var circ = 138.2;
 
         var ring      = document.getElementById('ring-' + courseId);
         var ringLabel = document.getElementById('ring-label-' + courseId);
@@ -275,24 +296,19 @@
     }
 
     // ── Mark done ────────────────────────────────────────────────
-    function markDone(key, courseId, chapId, chapterTotal) {
-        var p = getProgress();
-        p[key] = true;
-        saveProgress(p);
+    async function markDone(key, courseId, chapId, chapterTotal) {
+        await saveProgressToDb(key, true);
         applyState(key, true);
         updateChapterBar(chapId);
         updateCourseRing(courseId);
 
-        // If chapter is 100% done, show celebration briefly
         var r = countChapterDone(chapId);
         if (r.done === r.total) showChapterComplete(chapId);
     }
 
     // ── Mark undone ──────────────────────────────────────────────
-    function markUndone(key, courseId, chapId, chapterTotal) {
-        var p = getProgress();
-        delete p[key];
-        saveProgress(p);
+    async function markUndone(key, courseId, chapId, chapterTotal) {
+        await saveProgressToDb(key, false);
         applyState(key, false);
         updateChapterBar(chapId);
         updateCourseRing(courseId);
@@ -307,18 +323,17 @@
     }
 
     // ── Init on load ─────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', function () {
-        var blocks = document.querySelectorAll('[data-key]');
+    document.addEventListener('DOMContentLoaded', async function () {
+        await loadProgress();
+
+        var blocks   = document.querySelectorAll('[data-key]');
         var chapters = new Set();
         var courses  = new Set();
 
         blocks.forEach(function(b) {
-            var key      = b.dataset.key;
-            var courseId = b.dataset.course;
-            var chapId   = b.dataset.chapter;
-            applyState(key, isDone(key));
-            chapters.add(chapId);
-            courses.add(courseId);
+            applyState(b.dataset.key, isDone(b.dataset.key));
+            chapters.add(b.dataset.chapter);
+            courses.add(b.dataset.course);
         });
 
         chapters.forEach(function(c) { updateChapterBar(c); });

@@ -16,12 +16,13 @@ namespace LearningApp.Controllers
         // ===============================
         public async Task<IActionResult> Index()
         {
-            ViewBag.Error = "";
+           ViewBag.Error = "";
 
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("User")))
-            {
                 return RedirectToAction("Index", "Login");
-            }
+
+            // ADD THIS LINE - pass the session user to the view
+            ViewBag.UserId = HttpContext.Session.GetString("User");
 
             using var client = new HttpClient();
             var response = await client.GetAsync(ApiBaseUrl);
