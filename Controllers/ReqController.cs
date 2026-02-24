@@ -27,7 +27,12 @@ namespace FinalYearProjectMVC.Controllers
         // GET: /Requirements
         public async Task<IActionResult> Index()
         {
-            var response = await _httpClient.GetAsync($"{_apiBase}/api/req");
+            int userId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            System.Console.WriteLine($"Logged in user ID: {userId}");
+
+            var response = await _httpClient.GetAsync(
+                $"{_apiBase}/api/Req?userId={userId}");
+
 
             if (!response.IsSuccessStatusCode)
             {
