@@ -11,7 +11,16 @@
             <p>Test your knowledge and improve your skills!</p>
         </div>
 
-        <div class="progress-section">
+        <select id="courseSelect" onchange="loadQuiz()">
+            <option value="">-- Choose a Course --</option>
+        </select>
+
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading quiz...</p>
+        </div>
+
+        <div class="progress-section" style="display: none;" id="progressSection">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressBar">0%</div>
             </div>
@@ -44,121 +53,77 @@
 
 @section Scripts {
     <script>
-        const questions = [
-            {
-                question: "What does HTML stand for?",
-                options: [
-                    "Hyper Text Markup Language",
-                    "High Tech Modern Language",
-                    "Home Tool Markup Language",
-                    "Hyperlinks and Text Markup Language"
-                ],
-                correct: 0,
-                points: 10
-            },
-            {
-                question: "Which CSS property is used to change the text color?",
-                options: [
-                    "text-color",
-                    "font-color",
-                    "color",
-                    "text-style"
-                ],
-                correct: 2,
-                points: 10
-            },
-            {
-                question: "What is the correct syntax for referring to an external JavaScript file?",
-                options: [
-                    "<script href='app.js'>",
-                    "<script name='app.js'>",
-                    "<script src='app.js'>",
-                    "<js src='app.js'>"
-                ],
-                correct: 2,
-                points: 10
-            },
-            {
-                question: "Which HTML tag is used to define an internal style sheet?",
-                options: [
-                    "<css>",
-                    "<style>",
-                    "<script>",
-                    "<styles>"
-                ],
-                correct: 1,
-                points: 10
-            },
-            {
-                question: "In JavaScript, which operator is used to assign a value to a variable?",
-                options: [
-                    "*",
-                    "-",
-                    "=",
-                    "x"
-                ],
-                correct: 2,
-                points: 10
-            },
-            {
-                question: "What does CSS stand for?",
-                options: [
-                    "Creative Style Sheets",
-                    "Cascading Style Sheets",
-                    "Computer Style Sheets",
-                    "Colorful Style Sheets"
-                ],
-                correct: 1,
-                points: 10
-            },
-            {
-                question: "Which HTML attribute specifies an alternate text for an image?",
-                options: [
-                    "title",
-                    "src",
-                    "alt",
-                    "longdesc"
-                ],
-                correct: 2,
-                points: 10
-            },
-            {
-                question: "How do you create a function in JavaScript?",
-                options: [
-                    "function myFunction()",
-                    "function:myFunction()",
-                    "function = myFunction()",
-                    "create myFunction()"
-                ],
-                correct: 0,
-                points: 10
-            },
-            {
-                question: "Which property is used in CSS to change the background color?",
-                options: [
-                    "bgcolor",
-                    "background-color",
-                    "color-background",
-                    "bg-color"
-                ],
-                correct: 1,
-                points: 10
-            },
-            {
-                question: "What is the correct HTML for creating a hyperlink?",
-                options: [
-                    "<a url='http://example.com'>Example</a>",
-                    "<a href='http://example.com'>Example</a>",
-                    "<link>http://example.com</link>",
-                    "<a>http://example.com</a>"
-                ],
-                correct: 1,
-                points: 10
-            }
-        ];
+        let questions = [];
+        let userAnswers = [];
+        let totalPoints = 0;
+        let courseId = null;
 
-        let userAnswers = new Array(questions.length).fill(null);
-        let totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+        async function loadQuiz() {
+            const select = document.getElementById('courseSelect');
+            courseId = select.value;
+
+            if (!courseId) {
+                return;
+            }
+
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('questionsContainer').innerHTML = '';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'none';
+
+            try {
+                const response = await fetch(`/Practice/GetQuiz?courseId=${courseId}&numQuestions=10`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load quiz');
+                }
+
+                const data = await response.json();
+                
+                // Set questions from API response
+                questions = data.questions;
+                userAnswers = new Array(questions.length).fill(null);
+                totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+
+                // Hide loading and show quiz
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('progressSection').style.display = 'block';
+                
+                renderQuestions();
+            } catch (error) {
+                console.error('Error loading quiz:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('questionsContainer').innerHTML = 
+                    '<div class="error-message">Failed to load quiz. Please try again.</div>';
+            }
+        }
+        async function loadCourses() {
+        try {
+            //const response = await fetch('http://localhost:5211/api/Courses/by-user/5');
+            const response = await fetch('/Practice/GetUserCourses');
+
+            if (!response.ok) {
+                throw new Error('Failed to load courses');
+            }
+
+            const courses = await response.json();
+            const select = document.getElementById('courseSelect');
+
+            // Clear existing options except default
+            select.innerHTML = '<option value="">-- Choose a Course --</option>';
+
+            courses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.courseId;
+                option.textContent = course.courseName;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading courses:', error);
+        }
+    }
 
         function renderQuestions() {
             const container = document.getElementById('questionsContainer');
@@ -287,7 +252,8 @@
             renderQuestions();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
-        renderQuestions();
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCourses();
+        });
     </script>
 }
