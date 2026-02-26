@@ -47,7 +47,7 @@ namespace LearningApp.Controllers
                 HttpContext.Session.SetInt32("UserId", userId);
                 HttpContext.Session.SetString("User", username);
 
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Req");
             }
             else if(response.StatusCode == System.Net.HttpStatusCode.BadRequest){
                 ViewBag.Error = "username or password is reqiured";

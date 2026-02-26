@@ -1,0 +1,570 @@
+@model LearningApp.Models.ATSResult
+@{
+    ViewData["Title"] = "ATS Analysis Results";
+    var fileName = ViewBag.FileName as string;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-title {
+            flex: 1;
+        }
+
+        .header-title h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .file-name {
+            color: #7f8c8d;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .categories-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-item {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .category-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .category-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .category-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        .category-feedback {
+            color: #5a6c7d;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .insight-card.strengths {
+            border-left: 4px solid #27ae60;
+        }
+
+        .insight-card.weaknesses {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .insight-card.recommendations {
+            border-left: 4px solid #f39c12;
+        }
+
+        .insight-title {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .insight-list {
+            list-style: none;
+        }
+
+        .insight-list li {
+            padding: 12px 0 12px 30px;
+            position: relative;
+            color: #5a6c7d;
+            line-height: 1.6;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .insight-list li:last-child {
+            border-bottom: none;
+        }
+
+        .insight-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .strengths .insight-list li::before {
+            background: #27ae60;
+        }
+
+        .weaknesses .insight-list li::before {
+            background: #e74c3c;
+        }
+
+        .recommendations .insight-list li::before {
+            background: #f39c12;
+        }
+
+        .keywords-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .keywords-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .keyword-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .keyword-group-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword-tag {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #5a6c7d;
+            border: 1px solid #e1e8ed;
+            display: inline-block;
+        }
+
+        .keyword-tag.found {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+
+        .keyword-tag.missing {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+
+        .density-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: #667eea;
+            color: white;
+        }
+
+        .footer {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        @@media print {
+            .back-btn {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .keywords-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-value {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>📊 ATS Analysis Results</h1>
+                    <div class="file-name">
+                        <span>📄</span>
+                        <span>@fileName</span>
+                    </div>
+                </div>
+                <a href="/ATS/Check" class="back-btn">← Check Another Resume</a>
+            </div>
+        </div>
+
+        <!-- Score Card -->
+        <div class="score-card">
+            <div class="score-circle">
+                <div class="score-value">@Model.OverallPercentage</div>
+                <div class="score-label">out of 100</div>
+            </div>
+            <div class="grade-badge">Grade: @Model.Grade</div>
+            
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-value">@Model.OverallScore</div>
+                    <div class="stat-label">Total Score</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">@Model.Categories.Count</div>
+                    <div class="stat-label">Categories Analyzed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">@Model.Strengths.Count</div>
+                    <div class="stat-label">Strengths Found</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Section -->
+        <div class="categories-section">
+            <h2 class="section-title">📋 Detailed Category Analysis</h2>
+            @foreach (var category in Model.Categories)
+            {
+                <div class="category-item">
+                    <div class="category-header">
+                        <div class="category-name">@category.CategoryName</div>
+                        <div class="category-score">@category.Score / @category.MaxScore (@category.Percentage%)</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @category.Percentage%"></div>
+                    </div>
+                    <div class="category-feedback">@category.Feedback</div>
+                </div>
+            }
+        </div>
+
+        <!-- Insights Grid -->
+        <div class="insights-grid">
+            <!-- Strengths -->
+            <div class="insight-card strengths">
+                <h3 class="insight-title">
+                    <span>✓</span>
+                    <span>Strengths</span>
+                </h3>
+                <ul class="insight-list">
+                    @foreach (var strength in Model.Strengths)
+                    {
+                        <li>@strength</li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Weaknesses -->
+            <div class="insight-card weaknesses">
+                <h3 class="insight-title">
+                    <span>⚠</span>
+                    <span>Areas for Improvement</span>
+                </h3>
+                <ul class="insight-list">
+                    @foreach (var weakness in Model.Weaknesses)
+                    {
+                        <li>@weakness</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="insight-card recommendations" style="margin-bottom: 30px;">
+            <h3 class="insight-title">
+                <span>💡</span>
+                <span>Actionable Recommendations</span>
+            </h3>
+            <ul class="insight-list">
+                @foreach (var recommendation in Model.Recommendations)
+                {
+                    <li>@recommendation</li>
+                }
+            </ul>
+        </div>
+
+        <!-- Keywords Section -->
+        <div class="keywords-section">
+            <h2 class="section-title">
+                <span>🔍</span>
+                <span>Keyword Analysis</span>
+            </h2>
+            
+            <div style="margin-bottom: 25px;">
+                <strong style="color: #2c3e50; margin-right: 10px;">Keyword Density:</strong>
+                <span class="density-badge">@Model.KeywordAnalysis.KeywordDensity</span>
+            </div>
+
+            <div class="keywords-grid">
+                <!-- Found Keywords -->
+                <div class="keyword-group">
+                    <div class="keyword-group-title">
+                        <span style="color: #27ae60;">✓</span>
+                        <span>Found Keywords (@Model.KeywordAnalysis.FoundKeywords.Count)</span>
+                    </div>
+                    <div class="keyword-tags">
+                        @foreach (var keyword in Model.KeywordAnalysis.FoundKeywords)
+                        {
+                            <span class="keyword-tag found">@keyword</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Missing Keywords -->
+                <div class="keyword-group">
+                    <div class="keyword-group-title">
+                        <span style="color: #e74c3c;">✗</span>
+                        <span>Missing Keywords (@Model.KeywordAnalysis.MissingKeywords.Count)</span>
+                    </div>
+                    <div class="keyword-tags">
+                        @foreach (var keyword in Model.KeywordAnalysis.MissingKeywords)
+                        {
+                            <span class="keyword-tag missing">@keyword</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Analysis completed on @DateTime.Parse(Model.AnalyzedAt).ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
+            <p style="margin-top: 8px;">💼 Keep refining your resume to improve your ATS score!</p>
+        </div>
+    </div>
+
+    <script>
+        // Animate progress bars on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            setTimeout(() => {
+                progressBars.forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 100);
+                });
+            }, 200);
+        });
+
+        // Print functionality
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>
